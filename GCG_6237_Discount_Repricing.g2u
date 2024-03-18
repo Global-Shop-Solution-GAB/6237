@@ -1,0 +1,375 @@
+Program.Sub.ScreenSU.Start
+Gui.FormReprice..Create
+Gui.FormReprice..Caption("Sales Order Line Repricing")
+Gui.FormReprice..Size(9750,10695)
+Gui.FormReprice..MinX(0)
+Gui.FormReprice..MinY(0)
+Gui.FormReprice..Position(0,0)
+Gui.FormReprice..BackColor(-2147483633)
+Gui.FormReprice..MousePointer(0)
+Gui.FormReprice..Event(UnLoad,FormReprice_UnLoad)
+Gui.FormReprice.GsGridReprice.Create(GsGridControl)
+Gui.FormReprice.GsGridReprice.Size(9315,9510)
+Gui.FormReprice.GsGridReprice.Position(105,165)
+Gui.FormReprice.GsGridReprice.Anchor(15)
+Gui.FormReprice.cmdSubmit.Create(Button)
+Gui.FormReprice.cmdSubmit.Size(855,375)
+Gui.FormReprice.cmdSubmit.Position(105,9780)
+Gui.FormReprice.cmdSubmit.Anchor(6)
+Gui.FormReprice.cmdSubmit.Caption("Submit")
+Gui.FormReprice.cmdSubmit.Event(Click,cmdSubmit_Click)
+Program.Sub.ScreenSU.End
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sSql.Declare(String,"")
+V.Local.fPrice.Declare(Float,0)
+V.Local.sLine.Declare(String,"")
+V.Local.sOrd.Declare(String,"")
+V.Local.iQty.Declare(Long,0)
+V.Local.i.Declare(Long,0)
+V.Local.iPal.Declare(Long,0)
+V.Local.sFilter.Declare(String,"")
+V.Local.sPrice.Declare(String,"")
+
+F.Intrinsic.Control.SelectCase(V.Caller.Hook)
+	'No Longer needing but leaving Code in incase customer changes their mind
+	'Order Header Post Lines Button
+'	F.Intrinsic.Control.Case(11811)
+'	
+'		F.Intrinsic.String.Format(V.Passed.000003,"0000000",V.Local.sOrd)
+'		'Only running this script if fired when in Sales Order New
+
+'		F.Intrinsic.String.Build("Select Record_No, Part, Location, Qty_Ordered From V_Order_Lines a Where Order_No = '{0}' and Record_No Not IN(Select Record_NO From GCG_6237_Ord_Disc b Where a.Order_No = b.Order_No and a.Record_No = b.Record_No and a.Part = b.Part and a.Location = b.Location) Order By Record_No",V.Local.sOrd,V.Local.sSql)
+'		F.ODBC.Connection!Con.OpenCompanyConnection
+'		F.Data.DataTable.CreateFromSQL("OrderLine","con",V.Local.sSql,True)
+
+'		F.Intrinsic.Control.If(V.DataTable.OrderLine.RowCount--,<>,-1)
+'			F.Intrinsic.String.Build("Select Order_NO, Record_Type, Record_No, a.Part, a.Location, a.DESCRIPTION, Qty_Ordered, Discount, Cost, Price, CEILING(Qty_Ordered/Cntnrs_per_Pallet) as Pallets, '' as dmyclmn From V_Order_Lines a Left Join V_Inventory_Mst3 b on a.part = b.part and a.Location = b.Location Where Order_No = '{0}' Order By Record_No",V.Local.sOrd,V.Local.sSql)
+'			F.Data.DataTable.CreateFromSQL("Lines","con",V.Local.sSql,True)
+'			F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.Lines.RowCount--,1)
+'				F.Intrinsic.Math.Add(V.DataTable.Lines(V.Local.i).Pallets!FieldVal,V.Local.iPal,V.Local.iPal)
+'			F.Intrinsic.Control.Next(V.Local.i)
+'			F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.OrderLine.RowCount--,1)
+'			
+'				F.Intrinsic.String.Build("Record_No = '{0}'",V.DataTable.OrderLine(V.Local.i).Record_NO!FieldValTrim,V.Local.sFilter)
+'				F.Data.DataView.Create("Lines","VLines",22,V.Local.sFilter,"")
+'				F.Intrinsic.Control.If(V.DataView.Lines!VLines.RowCount--,<>,-1)
+'					F.Intrinsic.String.Build("Select Top 1 Unit_Price From GCG_6237_Unit_Price Where Customer = '{0}' and Part = '{1}' and Location = '{2}' and Max_Pallet <= {3} Order by Max_Pallet Desc",V.Passed.Global.Trim,V.DataTable.OrderLine(V.Local.i).Part!FieldValTrim,V.DataTable.OrderLine(V.Local.i).Location!FieldValTrim,V.Local.iPal,V.Local.sSql)
+'		
+'					F.ODBC.Connection!Con.ExecuteAndReturn(v.Local.sSql,V.Local.fPrice)
+'					F.Intrinsic.String.Format(V.Local.fPrice,"####0.000000",V.Local.sPrice)
+'					F.Data.DataView.SetValue("Lines","VLines",-1,"Price",V.Local.sPrice)
+'				F.Intrinsic.Control.EndIf
+'				F.Data.DataView.Close("Lines","VLines")
+'			F.Intrinsic.Control.Next(V.Local.i)
+'			
+'			F.Intrinsic.Control.CallSub(Callwrapper)
+'			
+'			F.Data.DataTable.SaveToDB("Lines","con","GCG_6237_Ord_Disc","Order_NO*!*Record_No*!*Part*!*Location",7,"Order_No@!@Order_No*!*Record_No@!@Record_NO*!*Part@!@Part*!*Location@!@Location")
+'			F.Data.DataTable.Close("Lines")
+'		F.Intrinsic.Control.EndIf
+'		F.Data.DataTable.Close("OrderLine")
+'		F.ODBC.Connection!Con.Close
+		
+	'Order Lines Script 1
+	F.Intrinsic.Control.Case(12620)
+		F.Intrinsic.String.Format(V.Passed.000005,"0000000",V.Local.sOrd)
+		
+		F.Intrinsic.String.Build("Select Order_NO, Record_Type, Record_No, a.Part, a.Location, a.DESCRIPTION, Qty_Ordered, Discount, Cost, Price as C_Price, Price, IF(Cntnrs_per_Pallet > 0,CEILING(Qty_Ordered/Cntnrs_per_Pallet),1) as Pallets, '' as dmyclmn From V_Order_Lines a Left Join V_Inventory_Mst3 b on a.part = b.part and a.Location = b.Location Where Order_No = '{0}' Order By Record_No",V.Local.sOrd,V.Local.sSql)
+		F.ODBC.Connection!Con.OpenCompanyConnection
+		F.Data.DataTable.CreateFromSQL("Lines","con",V.Local.sSql,True)
+		F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.Lines.RowCount--,1)
+			F.Intrinsic.Math.Add(V.DataTable.Lines(V.Local.i).Pallets!FieldVal,V.Local.iPal,V.Local.iPal)
+		F.Intrinsic.Control.Next(V.Local.i)
+		F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.Lines.RowCount--,1)
+
+			F.Intrinsic.String.Build("Select Top 1 Unit_Price From GCG_6237_Unit_Price Where Customer = '{0}' and Part = '{1}' and Location = '{2}' and Max_Pallet <= {3} Order by Max_Pallet Desc",V.Passed.Global.Trim,V.DataTable.Lines(V.Local.i).Part!FieldValTrim,V.DataTable.Lines(V.Local.i).Location!FieldValTrim,V.Local.iPal,V.Local.sSql)
+	
+			F.ODBC.Connection!Con.ExecuteAndReturn(v.Local.sSql,V.Local.fPrice)
+			F.Intrinsic.String.Format(V.Local.fPrice,"####0.000000",V.Local.sPrice)
+			F.Data.DataTable.SetValue("Lines",V.Local.i,"Price",V.Local.sPrice)
+
+		F.Intrinsic.Control.Next(V.Local.i)
+		
+		F.ODBC.Connection!Con.Close
+		
+		F.Intrinsic.Control.CallSub(Set_Properties)
+		
+		Gui.FormReprice..Show
+		
+		Gui.FormReprice..WaitForDismiss
+		
+	'Order Line Quantity Ordered Changed
+	F.Intrinsic.Control.Case(12490)
+		F.ODBC.Connection!Con.OpenCompanyConnection
+		F.Intrinsic.String.Build("Select Top 1 Unit_Price From GCG_6237_Unit_Price Where Customer = '{0}' and Part = '{1}' and Location = '{2}' Order by Max_Pallet",V.Passed.Global,V.Passed.000071.Trim,V.Passed.000074.Trim,V.Local.sSql)
+		
+		F.ODBC.Connection!Con.ExecuteAndReturn(v.Local.sSql,V.Local.fPrice)
+		
+		F.Intrinsic.String.Format(V.Passed.000005,"0000000",V.Local.sOrd)
+		F.Intrinsic.String.Format(V.Passed.000013,"000",V.Local.sLine)
+		F.Intrinsic.String.Format(V.Local.sLine,"0000",V.Local.sLine)
+		
+		F.Intrinsic.String.Build("Select Record_No From V_Order_Lines Where Order_No = '{0}' and Record_No = '{1}'",V.Local.sOrd,V.Local.sLine,V.Local.sSql)
+		F.ODBC.Connection!Con.ExecuteAndReturn(V.Local.sSql,V.Local.sLine)
+		
+		F.ODBC.Connection!Con.Close
+
+		'new entry and haven't been saved to order lines table this happens when saving the line
+		F.Intrinsic.Control.If(V.Local.sLine.Trim,=,"")
+			V.Passed.000067.Set(V.Local.fPrice)
+		F.Intrinsic.Control.EndIf
+		
+	'Order Line Populate
+	F.Intrinsic.Control.Case(12440)
+		V.Passed.000162.Set("Recalc Price")
+		V.Passed.000209.Set("Pallet Disc")
+	
+	F.Intrinsic.Control.Case(11810)
+		V.Passed.Global.Set(V.Passed.000006.Trim)
+		
+F.Intrinsic.Control.EndSelect
+
+F.Intrinsic.Control.CallSub(Exit)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Repricing.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Exit)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Main.End
+
+Program.Sub.Exit.Start
+F.Intrinsic.Control.SetErrorHandler("Exit_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Exit_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+Program.Sub.Exit.End
+
+Program.Sub.FormReprice_UnLoad.Start
+F.Intrinsic.Control.SetErrorHandler("FormReprice_UnLoad_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+Gui.FormReprice..Visible(False)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("FormReprice_UnLoad_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+Program.Sub.FormReprice_UnLoad.End
+
+Program.Sub.cmdSubmit_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdSubmit_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.i.Declare(Long,0)
+V.Local.sPrice.Declare(String,"")
+
+F.Intrinsic.UI.InvokeWaitDialog("Updating Price.......................")
+Gui.FormReprice..Enabled(False)
+F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.Lines.RowCount--,1)
+
+	F.Intrinsic.String.Format(V.DataTable.Lines(V.Local.i).Price!FieldVal,"####0.000000",V.Local.sPrice)
+	F.Data.DataTable.SetValue("Lines",V.Local.i,"Price",V.Local.sPrice)
+
+F.Intrinsic.Control.Next(V.Local.i)
+		
+F.Intrinsic.Control.CallSub(Callwrapper)
+F.Intrinsic.UI.CloseWaitDialog
+F.Intrinsic.Control.CallSub(FormReprice_UnLoad)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdSubmit_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Repricing.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Exit)
+Function.Intrinsic.Control.EndIf
+Program.Sub.cmdSubmit_Click.End
+
+Program.Sub.Callwrapper.Start
+F.Intrinsic.Control.SetErrorHandler("Callwrapper_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sFiledir.Declare(String,"")
+V.Local.sData.Declare(String,"")
+v.Local.sClmn.Declare(String,"")
+V.Local.sReturnCode.Declare(String,"")
+
+v.Local.sClmn.Set("Record_Type*!*ORDER_NO*!*Record_No*!*dmyclmn*!*dmyclmn*!*dmyclmn*!*Price*!*Cost*!*DESCRIPTION*!*dmyclmn*!*dmyclmn*!*dmyclmn*!*dmyclmn*!*dmyclmn*!*discount*!*dmyclmn*!*dmyclmn*!*dmyclmn*!*dmyclmn*!*dmyclmn*!*dmyclmn*!*dmyclmn")
+
+F.Data.DataView.Create("Lines","VLines",22,"","")
+F.Data.DataView.ToString("Lines","VLines",V.Local.sClmn,",",V.Ambient.NewLine,V.Local.sData)
+F.Data.DataView.Close("Lines","VLines")
+
+'remove decimals
+f.Intrinsic.String.Replace(v.Local.sData,".","",v.Local.sData)
+
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","SOUPDLINES.TXT",V.Local.sFiledir)
+F.Intrinsic.File.String2File(V.Local.sFiledir,V.Local.sData)
+
+F.Global.Callwrapper.New("Test","Sales.UpdateOrderHeaderAndLinesByFile")
+F.Global.Callwrapper.SetProperty("Test","Screenless",1)
+F.Global.Callwrapper.SetProperty("Test","InputFileName","SOUPDLINES.TXT")
+F.Global.CallWrapper.Run("Test")
+
+F.Global.CallWrapper.GetProperty("Test","Status",V.Local.sReturnCode)
+f.Intrinsic.Control.If(V.Local.sReturnCode,<>,"Success")
+	F.Intrinsic.UI.Msgbox("Line update Callwrapper failed")
+F.Intrinsic.Control.Else
+	V.Passed.RefreshGrid.Set(1)
+f.Intrinsic.Control.EndIf 
+			
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Callwrapper_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Repricing.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Exit)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Callwrapper.End
+
+Program.Sub.Set_Properties.Start
+F.Intrinsic.Control.SetErrorHandler("Set_Properties_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+'Order_NO, Record_Type, Record_No, a.Part, a.Location, a.DESCRIPTION, Qty_Ordered, Discount, Cost, Price as C_Price, Price, CEILING(Qty_Ordered/Pcs_Per_Cntnr) as Pallets, '' as dmyclmn
+Gui.FormReprice.GsGridReprice.AddGridviewFromDatatable("GLines","Lines")
+
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Order_NO","Visible",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_Type","Visible",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_No","Visible",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Part","Visible",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Location","Visible",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","DESCRIPTION","Visible",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Qty_Ordered","Visible",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Discount","Visible",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Cost","Visible",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","C_Price","Visible",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Price","Visible",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Pallets","Visible",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","dmyclmn","Visible",False)
+
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Order_NO","ReadOnly",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_Type","ReadOnly",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_No","ReadOnly",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Part","ReadOnly",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Location","ReadOnly",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","DESCRIPTION","ReadOnly",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Qty_Ordered","ReadOnly",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Discount","ReadOnly",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Cost","ReadOnly",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","C_Price","ReadOnly",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Price","ReadOnly",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Pallets","ReadOnly",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","dmyclmn","ReadOnly",True)
+
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Order_NO","AllowEdit",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_Type","AllowEdit",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_No","AllowEdit",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Part","AllowEdit",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Location","AllowEdit",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","DESCRIPTION","AllowEdit",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Qty_Ordered","AllowEdit",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Discount","AllowEdit",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Cost","AllowEdit",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","C_Price","AllowEdit",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Price","AllowEdit",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Pallets","AllowEdit",False)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","dmyclmn","AllowEdit",False)
+
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Order_NO","Caption","Sales Order")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_Type","Caption","Record Type")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_No","Caption","Sales Order Line")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Part","Caption","Part")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Location","Caption","Location")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","DESCRIPTION","Caption","Description")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Qty_Ordered","Caption","Qty Ordered")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Discount","Caption","Discount")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Cost","Caption","Cost")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","C_Price","Caption","Current Price")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Price","Caption","Suggested Price")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Pallets","Caption","Pallets Count")
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","dmyclmn","Caption"," ")
+
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Order_NO","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_Type","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_No","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Part","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Location","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","DESCRIPTION","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Qty_Ordered","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Discount","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Cost","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","C_Price","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Price","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Pallets","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","dmyclmn","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Order_NO","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_Type","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_No","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Part","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Location","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","DESCRIPTION","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Qty_Ordered","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Discount","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Cost","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","C_Price","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Price","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Pallets","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","dmyclmn","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Order_NO","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_Type","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Record_No","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Part","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Location","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","DESCRIPTION","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Qty_Ordered","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Discount","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Cost","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","C_Price","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Price","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","Pallets","HeaderFontBold",True)
+Gui.FormReprice.GsGridReprice.SetColumnProperty("GLines","dmyclmn","HeaderFontBold",True)
+
+Gui.FormReprice.GsGridReprice.MainView("GLines")
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Set_Properties_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Repricing.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Exit)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Set_Properties.End
