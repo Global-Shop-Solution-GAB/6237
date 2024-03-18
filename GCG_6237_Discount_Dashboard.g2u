@@ -1,0 +1,349 @@
+Program.Sub.ScreenSU.Start
+Gui.FormDisDash..Create
+Gui.FormDisDash..Caption("Customer Discount Pricing")
+Gui.FormDisDash..Size(15360,10695)
+Gui.FormDisDash..MinX(0)
+Gui.FormDisDash..MinY(0)
+Gui.FormDisDash..Position(0,0)
+Gui.FormDisDash..BackColor(-2147483633)
+Gui.FormDisDash..MousePointer(0)
+Gui.FormDisDash..Event(UnLoad,FormDisDash_UnLoad)
+Gui.FormDisDash.GsGridDisPricing.Create(GsGridControl)
+Gui.FormDisDash.GsGridDisPricing.Size(15015,9210)
+Gui.FormDisDash.GsGridDisPricing.Position(90,870)
+Gui.FormDisDash.GsGridDisPricing.Event(RowCellClick,GsGridDisPricing_RowCellClick)
+Gui.FormDisDash.lblNote.Create(Label,"Customer Note",True,1230,255,0,105,120,True,0,"Arial",8,-2147483633,0)
+Gui.FormDisDash.txtnote.Create(TextBoxR)
+Gui.FormDisDash.txtnote.Size(9870,750)
+Gui.FormDisDash.txtnote.Position(1455,45)
+Gui.FormDisDash.txtnote.Event(GotFocus,txtnote_GotFocus)
+Gui.FormDisDash.cmdPrint.Create(Button)
+Gui.FormDisDash.cmdPrint.Size(1710,375)
+Gui.FormDisDash.cmdPrint.Position(11535,390)
+Gui.FormDisDash.cmdPrint.Caption("Print Report")
+Gui.FormDisDash.cmdPrint.Event(Click,cmdPrint_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.sCustomer.Declare(String,"")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+F.Intrinsic.Control.SelectCase(V.Caller.Hook)
+	'Order Line Script 2 Short Form
+	F.Intrinsic.Control.Case(12630)
+		V.Global.sCustomer.Set(V.Passed.Global.Trim)
+		F.Intrinsic.Control.CallSub(Get_Data)
+		F.Intrinsic.Control.CallSub(Set_Prob)
+		F.Intrinsic.Control.CallSub(Create_Context_Menu)
+
+		Gui.FormDisDash..Show
+		Gui.FormDisDash..AlwaysOnTop(True)
+		Gui.FormDisDash..AlwaysOnTop(False)
+
+	'CRM Populate Hook
+	f.Intrinsic.Control.Case(51000)
+		v.Passed.CRM-TSB_GAB-5.Set("Pallet Disc")
+		F.Intrinsic.Control.End
+		
+	'CRM Script 10 Hook
+	f.Intrinsic.Control.Case(51090)
+		F.Intrinsic.Control.If(V.Passed.DATA-CRM-CompTypeAlpha.UCase,=,"C","AND",V.Passed.DATA-CRM-CompID.Trim,<>,"")
+			V.Global.sCustomer.Set(V.Passed.DATA-CRM-CompID.Trim)
+			F.Intrinsic.Control.CallSub(Get_Data)
+			F.Intrinsic.Control.CallSub(Set_Prob)
+			F.Intrinsic.Control.CallSub(Create_Context_Menu)
+
+			Gui.FormDisDash..Show
+			Gui.FormDisDash..AlwaysOnTop(True)
+			Gui.FormDisDash..AlwaysOnTop(False)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Control.End
+		F.Intrinsic.Control.EndIf
+		
+	F.Intrinsic.Control.CaseElse
+		F.Intrinsic.Control.End
+		
+F.Intrinsic.Control.EndSelect
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Dashboard.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormDisDash_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Main.End
+
+Program.Sub.FormDisDash_UnLoad.Start
+F.Intrinsic.Control.SetErrorHandler("FormDisDash_UnLoad_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("FormDisDash_UnLoad_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+Program.Sub.FormDisDash_UnLoad.End
+
+Program.Sub.GsGridDisPricing_RowCellClick.Start
+F.Intrinsic.Control.SetErrorHandler("GsGridDisPricing_RowCellClick_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.iX.Declare(Long,0)
+V.Local.iY.Declare(Long,0)
+
+F.Intrinsic.API.GetMousePosition(V.Local.iX,V.Local.iY)
+		
+'showing context menu
+Gui.FormDisDash..ContextMenuShow("UnitPrice",V.Local.iX,V.Local.iY)
+		
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("GsGridDisPricing_RowCellClick_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Dashboard.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormDisDash_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.GsGridDisPricing_RowCellClick.End
+
+Program.Sub.Get_Data.Start
+F.Intrinsic.Control.SetErrorHandler("Get_Data_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sSql.Declare(String,"")
+
+F.ODBC.Connection!Con.OpenCompanyConnection
+
+F.Intrinsic.String.Build("Select rtrim(Cust_Note) From GCG_6237_Cust_Note Where Customer = '{0}'",V.Global.sCustomer.Trim,V.Local.sSql)
+F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSql,V.Local.sSql)
+Gui.FormDisDash.txtNote.Text(V.Local.sSql)
+	
+F.Intrinsic.String.Build("Select A.Customer, Name_Customer, rtrim(Part) as Part, rtrim(Location) as Location,  Cast(0 as NUMERIC(8,0)) as Pkgd_Weight, Cast(0 as NUMERIC(12,4)) as Cntnrs_per_Pallet, Max_Pallet, Unit_Price From GCG_6237_Unit_Price A Left Join V_Customer_Master B on A.Customer = B.Customer Where A.Customer = '{0}' Order by Part,Location,Max_Pallet",V.Global.sCustomer,V.Local.sSql)
+
+F.Data.DataTable.CreateFromSQL("Price","con",V.Local.sSql,True)
+
+F.Data.DataView.Create("Price","VPrice",22,"","")
+
+F.ODBC.Connection!Con.Close
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Get_Data_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Dashboard.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormDisDash_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Get_Data.End
+
+Program.Sub.Set_Prob.Start
+F.Intrinsic.Control.SetErrorHandler("Set_Prob_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+Gui.FormDisDash.GsGridDisPricing.AddGridviewFromDataview("GExPrice","Price","VPrice")
+Gui.FormDisDash.GsGridDisPricing.SetGridviewProperty("GExPrice","Showgrouppanel",True)
+Gui.FormDisDash.GsGridDisPricing.SetGridviewProperty("GExPrice","Editable",False)
+Gui.FormDisDash.GsGridDisPricing.SetGridviewProperty("GExPrice","ReadOnly",True)
+
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Name_Customer","GroupIndex",0)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Part","GroupIndex",1)
+
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Part","Visible",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Location","Visible",False)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Customer","Visible",False)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Name_Customer","Visible",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Pkgd_Weight","Visible",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Cntnrs_per_Pallet","Visible",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Max_Pallet","Visible",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Unit_Price","Visible",True)
+
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Part","Caption","Part")
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Location","Caption","Location")
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Customer","Caption","Customer #")
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Name_Customer","Caption","Customer")
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Pkgd_Weight","Caption","Weight/Case")
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Cntnrs_per_Pallet","Caption","Case Count")
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Max_Pallet","Caption","Total Order Pallet Qty")
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Unit_Price","Caption","Unit Price")
+
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Part","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Location","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Customer","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Name_Customer","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Pkgd_Weight","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Cntnrs_per_Pallet","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Max_Pallet","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Unit_Price","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Part","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Location","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Customer","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Name_Customer","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Pkgd_Weight","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Cntnrs_per_Pallet","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Max_Pallet","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Unit_Price","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Part","HeaderFontBold",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Location","HeaderFontBold",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Customer","HeaderFontBold",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Name_Customer","HeaderFontBold",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Pkgd_Weight","HeaderFontBold",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Cntnrs_per_Pallet","HeaderFontBold",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Max_Pallet","HeaderFontBold",True)
+Gui.FormDisDash.GsGridDisPricing.SetColumnProperty("GExPrice","Unit_Price","HeaderFontBold",True)
+
+Gui.FormDisDash.GsGridDisPricing.MainView("GExPrice")
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Set_Prob_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Dashboard.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormDisDash_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Set_Prob.End
+
+Program.Sub.Create_Context_Menu.Start
+F.Intrinsic.Control.SetErrorHandler("Create_Context_Menu_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+Gui.FormDisDash..ContextMenuCreate("UnitPrice")
+Gui.FormDisDash..ContextMenuAddItem("UnitPrice","Export Grid",0,"Export Customer Pricing Sheet")
+	
+Gui.FormDisDash..ContextMenuSetItemEventHandler("UnitPrice","Export Grid",MenuClick)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Create_Context_Menu_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Dashboard.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormDisDash_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Create_Context_Menu.End
+
+Program.Sub.MenuClick.Start
+F.Intrinsic.Control.SetErrorHandler("MenuClick_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.bExcel.Declare(Boolean,False)
+V.Local.sExt.Declare(String,"")
+V.Local.sFilePath.Declare(String)
+v.Local.bFileExists.Declare(Boolean,False)
+
+F.Intrinsic.Control.SelectCase(V.Args.ItemName.UCase)
+	F.Intrinsic.Control.Case("EXPORT GRID")
+		F.Automation.MSExcel.CheckPresence(V.Local.bExcel)
+		
+		F.Intrinsic.Control.If(V.Local.bExcel)
+			V.Local.sExt.Set("xlsx")
+			F.Intrinsic.String.Build("GCG_6237_{0}_{1}.xlsx",V.Global.sCustomer,V.Ambient.Now,V.Local.sFilePath)
+			F.Intrinsic.File.MakeFilenameFriendly(V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.If(V.Caller.LocalGSSTempDir.Right1,=,"\")
+				F.Intrinsic.String.Build("{0}{1}",V.Caller.LocalGSSTempDir,V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("{0}\{1}",V.Caller.LocalGSSTempDir,V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Else
+			V.Local.sExt.Set("csv")
+			F.Intrinsic.String.Build("GCG_6011_{0}_{1}.csv",V.Global.sCustomer,V.Ambient.Now,V.Local.sFilePath)
+			F.Intrinsic.File.MakeFilenameFriendly(V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.If(V.Caller.LocalGSSTempDir.Right1,=,"\")
+				F.Intrinsic.String.Build("{0}{1}",V.Caller.LocalGSSTempDir,V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("{0}\{1}",V.Caller.LocalGSSTempDir,V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		
+		Gui.FormDisDash.GsGridDisPricing.Export(V.Local.sFilePath,V.Local.sExt)
+		
+		f.Intrinsic.File.Exists(V.Local.sFilePath,v.Local.bFileExists)		
+		F.Intrinsic.Control.If(v.Local.bFileExists.Not)
+			F.Intrinsic.UI.MsgBox(V.Local.sFilePath, "Export Failed.")
+		f.Intrinsic.Control.Else
+			F.Intrinsic.Task.ShellExec(0,"",V.Local.sFilePath,"","",1)
+		F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.EndSelect
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("MenuClick_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Dashboard.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormDisDash_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.MenuClick.End
+
+Program.Sub.txtNote_GotFocus.Start
+F.Intrinsic.Control.SetErrorHandler("txtNote_GotFocus_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+Gui.FormDisDash.txtNote.SelectAll
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("txtNote_GotFocus_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Dashboard.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormDisDash_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.txtNote_GotFocus.End
+
+Program.Sub.cmdPrint_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdPrint_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sParams.Declare(String,"")
+V.Local.sValues.Declare(String,"")
+V.Local.iRet.Declare(Long,0)
+V.Local.lBIRunID.Declare(Long,0)
+V.Local.lLogID.Declare(Long,0)
+V.Local.iRpt.Declare(Long,0)
+
+F.Global.BI.GetRunID(V.Local.lBIRunID)
+F.Global.BI.GetIDFromName("GCG_6237_Type_Price.rpt",V.Local.iRpt)
+F.Global.BI.StartLogging(V.Local.lBIRunID,V.Local.iRpt,-1,"GCG_6237_Type_Price",V.Local.lLogID)
+F.Global.BI.StopLogging(V.Local.lLogID)
+
+V.Local.sParams.Set("Customer*!*Note")
+F.Intrinsic.String.Build("{0}*!*{1}",V.Global.sCustomer.Trim,V.Screen.FormDisDash!txtNote.Text,V.Local.sValues)
+
+F.Global.BI.RunReportPreProcessor(V.Local.lBIRunID,V.Local.lLogID,V.Local.sParams,V.Local.sValues.Trim,"",-1,True,"",-1,"",-1,"","",V.Local.iRet)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdPrint_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Discount_Dashboard.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormDisDash_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.cmdPrint_Click.End
