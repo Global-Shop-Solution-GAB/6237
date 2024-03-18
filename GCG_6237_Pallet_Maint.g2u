@@ -1,0 +1,710 @@
+Program.Sub.ScreenSU.Start
+Gui.FormPalletMaint..Create
+Gui.FormPalletMaint..Caption("Pallet Discount Maintenance")
+Gui.FormPalletMaint..Size(9600,9210)
+Gui.FormPalletMaint..MinX(0)
+Gui.FormPalletMaint..MinY(0)
+Gui.FormPalletMaint..Position(0,0)
+Gui.FormPalletMaint..BackColor(-2147483633)
+Gui.FormPalletMaint..MousePointer(0)
+Gui.FormPalletMaint..Event(UnLoad,FormPalletMaint_UnLoad)
+Gui.FormPalletMaint.lblCust.Create(Label,"Select Customer",True,1935,255,0,105,270,True,0,"Arial",8,-2147483633,0)
+Gui.FormPalletMaint.txtCust.Create(TextBox,"",True,2130,300,0,105,525,True,0,"Arial",8,-2147483643,1)
+Gui.FormPalletMaint.txtCust.Event(GotFocus,txtCust_GotFocus)
+Gui.FormPalletMaint.txtCust.Event(LostFocus,txtCust_LostFocus)
+Gui.FormPalletMaint.txtCust.Event(KeyPressEnter,txtCust_KeyPressEnter)
+Gui.FormPalletMaint.cmdCust.Create(Button)
+Gui.FormPalletMaint.cmdCust.Size(465,375)
+Gui.FormPalletMaint.cmdCust.Position(2325,480)
+Gui.FormPalletMaint.cmdCust.Caption("^")
+Gui.FormPalletMaint.cmdCust.Event(Click,cmdCust_Click)
+Gui.FormPalletMaint.GsGridDiscount.Create(GsGridControl)
+Gui.FormPalletMaint.GsGridDiscount.Size(9240,7365)
+Gui.FormPalletMaint.GsGridDiscount.Position(105,915)
+Gui.FormPalletMaint.GsGridDiscount.Event(RowCellClick,GsGridDiscount_RowCellClick)
+Gui.FormPalletMaint.GsGridDiscount.Event(MouseCellEnter,GsGridDiscount_MouseCellEnter)
+Gui.FormPalletMaint.GsGridDiscount.Anchor(15)
+Gui.FormPalletMaint.cmdSave.Create(Button)
+Gui.FormPalletMaint.cmdSave.Size(855,375)
+Gui.FormPalletMaint.cmdSave.Position(105,8355)
+Gui.FormPalletMaint.cmdSave.Caption("Save")
+Gui.FormPalletMaint.cmdSave.Event(Click,cmdSave_Click)
+Gui.FormPalletMaint.cmdSave.Anchor(6)
+Gui.FormPalletMaint.GsGridExport.Create(GsGridControl)
+Gui.FormPalletMaint.GsGridExport.Visible(False)
+Gui.FormPalletMaint.GsGridExport.Size(13425,690)
+Gui.FormPalletMaint.GsGridExport.Position(2985,135)
+Gui.FormPalletMaint.txtNote.Create(TextBoxR)
+Gui.FormPalletMaint.txtNote.Size(5895,735)
+Gui.FormPalletMaint.txtNote.Position(3450,60)
+Gui.FormPalletMaint.txtNote.Event(GotFocus,txtNote_GotFocus)
+Gui.FormPalletMaint.lblNote.Create(Label,"Customer Note",True,1230,255,0,2190,165,True,0,"Arial",8,-2147483633,0)
+Gui.FormPalletMaint.cmdPrint.Create(Button)
+Gui.FormPalletMaint.cmdPrint.Size(1335,375)
+Gui.FormPalletMaint.cmdPrint.Position(8010,8355)
+Gui.FormPalletMaint.cmdPrint.Caption("Print Report")
+Gui.FormPalletMaint.cmdPrint.Event(Click,cmdPrint_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.iIndex.Declare(Long,-1)
+V.Global.iGridIndex.Declare(Long,-1)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sCust.Declare(String,"")
+V.Local.sSql.Declare(String,"")
+
+F.Intrinsic.Control.CallSub(Get_Parts_List)
+F.Intrinsic.Control.CallSub(Set_Properties)
+F.Intrinsic.Control.CallSub(Create_Context_Menu)
+
+Gui.FormPalletMaint..Show
+Gui.FormPalletMaint..AlwaysOnTop(True)
+Gui.FormPalletMaint..AlwaysOnTop(False)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Main.End
+
+Program.Sub.GsGridDiscount_RowCellClick.Start
+F.Intrinsic.Control.SetErrorHandler("GsGridDiscount_RowCellClick_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.iX.Declare(Long,0)
+V.Local.iY.Declare(Long,0)
+V.Local.sGrid.Declare(String,"")
+V.Local.sCust.Declare(String,"")
+
+V.Local.sCust.Set(V.Screen.FormPalletMaint!txtCust.Text)
+
+F.Intrinsic.Control.If(V.Local.sCust.Trim,=,"")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Try
+	Gui.FormPalletMaint.GsGridDiscount.GetFocusedGridview(V.Local.sGrid)
+F.Intrinsic.Control.Catch
+	'capturing error if gridview is not infocus
+	F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,121000)
+		F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndTry
+
+F.Intrinsic.Control.If(V.Local.sGrid,=,"PART")
+	F.Intrinsic.Control.If(V.Args.Button.UCase,=,"RIGHT")
+		F.Intrinsic.API.GetMousePosition(V.Local.iX,V.Local.iY)
+		
+		'showing context menu
+		Gui.FormPalletMaint..ContextMenuShow("UnitPrice",V.Local.iX,V.Local.iY)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Else
+	F.Intrinsic.Control.If(V.Args.Column.UCase,=,"DELETE_ROW")
+		F.Data.DataTable.DeleteRow("Part$Price",V.Args.RowIndex)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("GsGridDiscount_RowCellClick_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.GsGridDiscount_RowCellClick.End
+
+Program.Sub.GsGridDiscount_MouseCellEnter.Start
+F.Intrinsic.Control.SetErrorHandler("GsGridDiscount_MouseCellEnter_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.iMenu.Declare(Long,0)
+V.Local.iRowClick.Declare(Long,0)
+V.Local.sTemp.Declare(String,"")
+
+F.Intrinsic.Control.BlockEvents
+
+F.Intrinsic.Control.IsInCallstack(MenuClick,V.Local.iMenu)
+F.Intrinsic.Control.IsInCallstack(GsGridDiscount_RowCellClick,V.Local.iRowClick)
+
+F.Intrinsic.Control.If(V.Local.iMenu,=,0,"AND",V.Local.iRowClick,=,0)	
+	V.Global.iIndex.Set(V.Args.SourceRowIndex)
+	V.Global.iGridIndex.Set(V.Args.Row)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.UnBlockEvents
+	
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("GsGridDiscount_MouseCellEnter_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.GsGridDiscount_MouseCellEnter.End
+
+Program.Sub.FormPalletMaint_UnLoad.Start
+F.Intrinsic.Control.SetErrorHandler("FormPalletMaint_UnLoad_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("FormPalletMaint_UnLoad_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+Program.Sub.FormPalletMaint_UnLoad.End
+
+Program.Sub.cmdSave_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdSave_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sCustomer.Declare(String,"")
+V.Local.sSql.Declare(String,"")
+
+V.Local.sCustomer.Set(V.Screen.FormPalletMaint!txtCust.Text)
+F.Intrinsic.Control.If(V.Local.sCustomer.Trim,=,"")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!Con.OpenCompanyConnection
+F.Data.DataTable.Create("CNote",True)
+F.Data.DataTable.AddColumn("CNote","Customer",String)
+F.Data.DataTable.AddColumn("CNote","Cust_Note",String)
+
+F.Data.DataTable.AddRow("CNote","Customer",V.Local.sCustomer.Trim,"Cust_Note",V.Screen.FormPalletMaint!txtNote.Text)
+
+F.Data.DataTable.SaveToDB("CNote","con","GCG_6237_Cust_Note","Customer",256,"Customer@!@Customer*!*Cust_Note@!@Cust_Note")
+
+F.Data.DataTable.Close("CNote")
+
+F.Intrinsic.Control.If(V.DataTable.Part$Price.RowCount--,<>,-1)
+	F.Intrinsic.String.Build("Delete From GCG_6237_Unit_Price Where Customer = '{0}'",V.Screen.FormPalletMaint!txtCust.Text,V.Local.sSql)
+	F.ODBC.Connection!Con.Execute(V.Local.sSql)
+	F.Data.DataTable.SaveToDB("Part$Price","con","GCG_6237_Unit_Price","Customer*!*Part*!*Location*!*Max_Pallet",256,"Customer@!@Customer*!*Part@!@Part*!*Location@!@Location*!*Max_Pallet@!@Max_Pallet*!*Unit_Price@!@Unit_Price")
+	F.Intrinsic.UI.Msgbox("Customer Pricing Sheet Saved.........","Attention")
+	F.Data.DataTable.AcceptChanges("Part$Price")
+F.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!Con.Close
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdSave_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.txtCust_LostFocus.Start
+F.Intrinsic.Control.SetErrorHandler("txtCust_LostFocus_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sCust.Declare(String,"")
+V.Local.sSql.Declare(String,"")
+V.Local.i.Declare(Long,0)
+
+V.Local.sCust.Set(V.Screen.FormPalletMaint!txtCust.Text)
+
+F.Data.DataTable.DeleteRow("Part$Price")
+F.Data.DataTable.AcceptChanges("Part$Price")
+
+F.Intrinsic.Control.If(V.Local.sCust.Trim,<>,"")
+	F.ODBC.Connection!Con.OpenCompanyConnection
+	
+	F.Intrinsic.String.Build("Select rtrim(Cust_Note) From GCG_6237_Cust_Note Where Customer = '{0}'",V.Local.sCust.Trim,V.Local.sSql)
+	F.ODBC.Connection!con.ExecuteAndReturn(V.Local.sSql,V.Local.sSql)
+	Gui.FormPalletMaint.txtNote.Text(V.Local.sSql)
+	
+	F.Intrinsic.String.Build("Select rtrim(Part) as Part, rtrim(Location) as Location, Customer, Max_Pallet, Unit_Price From GCG_6237_Unit_Price Where Customer = '{0}' Order by Part,Location,Max_Pallet",V.Local.sCust.Trim,V.Local.sSql)
+
+	F.Data.DataTable.CreateFromSQL("TempPrice","con",V.Local.sSql,True)
+	
+	F.ODBC.Connection!con.Close
+	
+	F.Data.DataTable.Merge("TempPrice","Part$Price",False,2)
+	
+	F.Data.DataTable.AcceptChanges("Part$Price")
+	
+	F.Data.DataTable.Close("TempPrice")
+	
+	F.Intrinsic.Control.For(V.Local.i,0,V.DataTable.Part.RowCount--,1)
+		Gui.FormPalletMaint.GsGridDiscount.ExpandMasterRow("GPart",V.Local.i)
+	F.Intrinsic.Control.Next(V.Local.i)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("txtCust_LostFocus_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.txtCust_LostFocus.End
+
+Program.Sub.txtCust_GotFocus.Start
+F.Intrinsic.Control.SetErrorHandler("txtCust_GotFocus_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+Gui.FormPalletMaint.txtCust.SelectAll
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("txtCust_GotFocus_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.txtCust_GotFocus.End
+
+Program.Sub.txtCust_KeyPressEnter.Start
+F.Intrinsic.Control.SetErrorHandler("txtCust_KeyPressEnter_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+F.Intrinsic.Control.CallSub(txtCust_LostFocus)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("txtCust_KeyPressEnter_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.txtCust_KeyPressEnter.End
+
+Program.Sub.cmdCust_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdCust_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sRet.Declare(String)
+
+F.Intrinsic.UI.SetBrowserHotTypeAhead(True)
+
+F.Intrinsic.UI.Browser(205,"",V.Local.sRet)
+F.Intrinsic.Control.If(V.Local.sRet,<>,"***CANCEL***")
+	F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+	Gui.FormPalletMaint.txtCust.Text(V.Local.sRet.Trim)
+	F.Intrinsic.Control.CallSub(txtCust_LostFocus)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdCust_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.cmdCust_Click.End
+
+Program.Sub.Get_Parts_List.Start
+F.Intrinsic.Control.SetErrorHandler("Get_Parts_List_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sSql.Declare(String,"")
+
+F.ODBC.Connection!Con.OpenCompanyConnection
+
+F.Data.Dictionary.CreateFromSQL("CustName","con","Select Customer, Name_Customer From V_Customer_Master")
+F.Data.Dictionary.SetDefaultReturn("CustName"," ")
+
+V.Local.sSql.Set("Select rtrim(a.Part) as Part, rtrim(a.Location) as Location, Pkgd_Weight, Cntnrs_per_Pallet From V_Inventory_Mstr a Left Join V_Inventory_Mst3 b On a.Part = b.Part and a.Location = b.Location Order by a.Part,a.Location")
+
+F.Data.DataTable.CreateFromSQL("Part","con",V.Local.sSql,True)
+
+V.Local.sSql.Set("Select rtrim(Part) as Part, rtrim(Location) as Location, Customer, Max_Pallet, Unit_Price From GCG_6237_Unit_Price Where Customer = '-1' Order by Part,Location,Max_Pallet")
+
+F.Data.DataTable.CreateFromSQL("Part$Price","con",V.Local.sSql,True)
+
+V.Local.sSql.Set("Select Customer, '' as Name_Customer, rtrim(Part) as Part, rtrim(Location) as Location,  Cast(0 as NUMERIC(8,0)) as Pkgd_Weight, Cast(0 as NUMERIC(12,4)) as Cntnrs_per_Pallet, Max_Pallet, Unit_Price From GCG_6237_Unit_Price Where Customer = '-1' Order by Part,Location,Max_Pallet")
+
+F.Data.DataTable.CreateFromSQL("Price","con",V.Local.sSql,True)
+
+F.Data.DataTable.AddColumn("Part$Price","DELETE_ROW",String)
+
+F.Data.DataTable.AddRelation("Part","Part*!*Location","Part$Price","Part*!*Location")
+
+F.Data.DataView.Create("Price","VPrice",22,"","")
+F.Data.DataView.Create("Part","VPart",22,"","Part,Location")
+F.Data.DataView.Create("Part$Price","VPrice",22,"","Part,Location,Max_Pallet")
+
+F.ODBC.Connection!Con.Close
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Get_Parts_List_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Get_Parts_List.End
+
+Program.Sub.Set_Properties.Start
+F.Intrinsic.Control.SetErrorHandler("Set_Properties_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+Gui.FormPalletMaint.GsGridDiscount.AddGridviewFromDataview("GPart","Part","VPart")
+Gui.FormPalletMaint.GsGridDiscount.SetGridviewProperty("GPart","ReadOnly",True)
+Gui.FormPalletMaint.GsGridDiscount.SetGridviewProperty("GPart","Editable",False)
+Gui.FormPalletMaint.GsGridDiscount.SetGridviewProperty("GPart","OptionsViewShowAutoFilterRow",True)
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Part","Visible",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Location","Visible",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Pkgd_Weight","Visible",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Cntnrs_per_Pallet","Visible",True)
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Part","Caption","Part")
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Location","Caption","Location")
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Pkgd_Weight","Caption","Weight/Case")
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Cntnrs_per_Pallet","Caption","Case Count")
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Part","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Location","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Pkgd_Weight","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Cntnrs_per_Pallet","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Part","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Location","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Pkgd_Weight","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Cntnrs_per_Pallet","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Part","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Location","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Pkgd_Weight","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPart","Cntnrs_per_Pallet","HeaderFontBold",True)
+
+Gui.FormPalletMaint.GsGridDiscount.MainView("GPart")
+
+Gui.FormPalletMaint.GsGridDiscount.AddGridviewFromDataview("GPrice","Part","VPrice")
+
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Delete_Row","Visible",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Delete_Row","ReadOnly",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Delete_Row","AllowEdit",False)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Delete_Row","Caption"," ")
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Delete_Row","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Delete_Row","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Delete_Row","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Max_Pallet","ReadOnly",False)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Unit_Price","ReadOnly",False)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Max_Pallet","AllowEdit",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Unit_Price","AllowEdit",True)
+Gui.FormPalletMaint.GsGridDiscount.ColumnEdit("GPrice","Delete_Row","EditorButton","Delete")
+
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Part","Visible",False)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Location","Visible",False)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Customer","Visible",False)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Max_Pallet","Visible",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Unit_Price","Visible",True)
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Part","ReadOnly",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Location","ReadOnly",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Customer","ReadOnly",True)
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Part","AllowEdit",False)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Location","AllowEdit",False)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Customer","AllowEdit",False)
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Part","Caption","Part")
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Location","Caption","Location")
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Customer","Caption","Customer")
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Max_Pallet","Caption","Total Order Pallet Qty")
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Unit_Price","Caption","Unit Price")
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Part","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Location","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Customer","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Max_Pallet","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Unit_Price","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Part","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Location","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Customer","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Max_Pallet","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Unit_Price","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Part","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Location","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Customer","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Max_Pallet","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridDiscount.SetColumnProperty("GPrice","Unit_Price","HeaderFontBold",True)
+
+Gui.FormPalletMaint.GsGridExport.AddGridviewFromDataview("GExPrice","Price","VPrice")
+Gui.FormPalletMaint.GsGridExport.SetGridviewProperty("GExPrice","Showgrouppanel",True)
+
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Name_Customer","GroupIndex",0)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Part","GroupIndex",1)
+
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Part","Visible",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Location","Visible",False)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Customer","Visible",False)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Name_Customer","Visible",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Pkgd_Weight","Visible",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Cntnrs_per_Pallet","Visible",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Max_Pallet","Visible",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Unit_Price","Visible",True)
+
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Part","Caption","Part")
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Location","Caption","Location")
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Customer","Caption","Customer #")
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Name_Customer","Caption","Customer")
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Pkgd_Weight","Caption","Weight/Case")
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Cntnrs_per_Pallet","Caption","Case Count")
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Max_Pallet","Caption","Total Order Pallet Qty")
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Unit_Price","Caption","Unit Price")
+
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Part","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Location","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Customer","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Name_Customer","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Pkgd_Weight","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Cntnrs_per_Pallet","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Max_Pallet","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Unit_Price","HeaderBackColor",V.Enum.ThemeColors!ThemeColorDark)
+
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Part","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Location","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Customer","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Name_Customer","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Pkgd_Weight","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Cntnrs_per_Pallet","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Max_Pallet","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Unit_Price","HeaderForeColor",V.Enum.ThemeColors!TextOnThemeColor)
+
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Part","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Location","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Customer","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Name_Customer","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Pkgd_Weight","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Cntnrs_per_Pallet","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Max_Pallet","HeaderFontBold",True)
+Gui.FormPalletMaint.GsGridExport.SetColumnProperty("GExPrice","Unit_Price","HeaderFontBold",True)
+
+Gui.FormPalletMaint.GsGridExport.MainView("GExPrice")
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Set_Properties_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Set_Properties.End
+
+Program.Sub.Create_Context_Menu.Start
+F.Intrinsic.Control.SetErrorHandler("Create_Context_Menu_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+Gui.FormPalletMaint..ContextMenuCreate("UnitPrice")
+Gui.FormPalletMaint..ContextMenuAddItem("UnitPrice","Add Record",0,"Add Record")
+Gui.FormPalletMaint..ContextMenuAddItem("UnitPrice","Sep",3)
+Gui.FormPalletMaint..ContextMenuAddItem("UnitPrice","Export Grid",0,"Export Customer Pricing Sheet")
+	
+Gui.FormPalletMaint..ContextMenuSetItemEventHandler("UnitPrice","Add Record",MenuClick)
+Gui.FormPalletMaint..ContextMenuSetItemEventHandler("UnitPrice","Export Grid",MenuClick)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Create_Context_Menu_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.Create_Context_Menu.End
+
+Program.Sub.MenuClick.Start
+F.Intrinsic.Control.SetErrorHandler("MenuClick_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sPart.Declare(String,"")
+V.Local.sLoc.Declare(String,"")
+V.Local.sFilter.Declare(String,"")
+V.Local.iQty.Declare(Long,0)
+V.Local.bExcel.Declare(Boolean,False)
+V.Local.sExt.Declare(String,"")
+V.Local.sFilePath.Declare(String)
+v.Local.bFileExists.Declare(Boolean,False)
+V.Local.sPartList.Declare(String,"")
+
+F.Intrinsic.Control.SelectCase(V.Args.ItemName.UCase)
+	F.Intrinsic.Control.Case("ADD RECORD")
+		V.Local.sPart.Set(V.DataTable.Part(V.Global.iIndex).Part!FieldValTrim)
+		V.Local.sLoc.Set(V.DataTable.Part(V.Global.iIndex).Location!FieldValTrim)
+		F.Intrinsic.String.Build("Part = '{0}' and Location = '{1}'",V.Local.sPart.Trim,V.Local.sLoc.Trim,V.Local.sFilter)
+		F.Data.DataView.Create("Part$Price","VTemp",22,V.Local.sFilter,"Max_Pallet")
+		F.Intrinsic.Control.If(V.DataView.Part$Price!VTemp.RowCount--,<>,-1)
+			F.Intrinsic.Math.Add(V.DataView.Part$Price!VTemp(V.DataView.Part$Price!VTemp.RowCount--).Max_Pallet!FieldVal,1,V.Local.iQty)
+		F.Intrinsic.Control.Else
+			V.Local.iQty.Set(1)
+		F.Intrinsic.Control.EndIf
+		F.Data.DataTable.AddRow("Part$Price","Part",V.Local.sPart,"Location",V.Local.sLoc,"Customer",V.Screen.FormPalletMaint!txtCust.Text,"Max_Pallet",V.Local.iQty,"Unit_Price","0.00")
+		F.Data.DataView.Close("Part$Price","VTemp")
+		Gui.FormPalletMaint.GsGridDiscount.ExpandMasterRow("GPart",V.Global.iGridIndex)
+	F.Intrinsic.Control.Case("EXPORT GRID")
+
+		F.Data.DataView.Create("Part$Price","VTempPrice",22,"","")
+		F.Data.DataView.ToDataTable("Part","VTempPrice","TempPrice",True)
+		F.Data.DataView.Close("Part","VTempPrice")
+		F.Data.DataTable.Merge("TempPrice","Price",False,2)
+		F.Data.DataTable.Close("TempPrice")
+		
+		F.Data.Dictionary.CreateFromDataTable("Wght","Part","Part","Pkgd_Weight")
+		F.Data.Dictionary.SetDefaultReturn("Wght","0.00")
+		F.Data.DataTable.FillFromDictionary("Price","Wght","Part","Pkgd_Weight")
+		F.Data.Dictionary.Close("Wght")
+		
+		F.Data.Dictionary.CreateFromDataTable("Cnt","Part","Part","Cntnrs_Per_Pallet")
+		F.Data.Dictionary.SetDefaultReturn("Cnt","0.00")
+		F.Data.DataTable.FillFromDictionary("Price","Cnt","Part","Cntnrs_Per_Pallet")
+		F.Data.Dictionary.Close("Cnt")
+		
+		F.Data.DataTable.FillFromDictionary("Price","CustName","Customer","Name_Customer")
+		
+		F.Data.DataView.ToString("Part","VPrice","Part",V.Ambient.NewLine,"','",V.Local.sPartList)
+		
+		F.Intrinsic.String.Build("Part In('{0}')",V.Local.sPartList,V.Local.sFilter)
+		
+		F.Data.DataView.SetFilter("Price","VPrice",V.Local.sFilter)
+		
+		F.Automation.MSExcel.CheckPresence(V.Local.bExcel)
+		
+		F.Intrinsic.Control.If(V.Local.bExcel)
+			V.Local.sExt.Set("xlsx")
+			F.Intrinsic.String.Build("GCG_6237_{0}_{1}.xlsx",V.Screen.FormPalletMaint!txtCust.Text,V.Ambient.Now,V.Local.sFilePath)
+			F.Intrinsic.File.MakeFilenameFriendly(V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.If(V.Caller.LocalGSSTempDir.Right1,=,"\")
+				F.Intrinsic.String.Build("{0}{1}",V.Caller.LocalGSSTempDir,V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("{0}\{1}",V.Caller.LocalGSSTempDir,V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Else
+			V.Local.sExt.Set("csv")
+			F.Intrinsic.String.Build("GCG_6011_{0}_{1}.csv",V.Screen.FormPalletMaint!txtCust.Text,V.Ambient.Now,V.Local.sFilePath)
+			F.Intrinsic.File.MakeFilenameFriendly(V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.If(V.Caller.LocalGSSTempDir.Right1,=,"\")
+				F.Intrinsic.String.Build("{0}{1}",V.Caller.LocalGSSTempDir,V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("{0}\{1}",V.Caller.LocalGSSTempDir,V.Local.sFilePath,V.Local.sFilePath)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+		
+		Gui.FormPalletMaint.GsGridExport.Export(V.Local.sFilePath,V.Local.sExt)
+		
+		f.Intrinsic.File.Exists(V.Local.sFilePath,v.Local.bFileExists)		
+		F.Intrinsic.Control.If(v.Local.bFileExists.Not)
+			F.Intrinsic.UI.MsgBox(V.Local.sFilePath, "Export Failed.")
+		f.Intrinsic.Control.Else
+			F.Intrinsic.Task.ShellExec(0,"",V.Local.sFilePath,"","",1)
+		F.Intrinsic.Control.EndIf
+		
+		F.Data.DataTable.DeleteRow("Price")
+		F.Data.DataTable.AcceptChanges("Price")
+		
+		Gui.FormPalletMaint..AlwaysOnTop(True)
+		Gui.FormPalletMaint..AlwaysOnTop(False)
+
+F.Intrinsic.Control.EndSelect
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("MenuClick_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.MenuClick.End
+
+Program.Sub.txtNote_GotFocus.Start
+F.Intrinsic.Control.SetErrorHandler("txtNote_GotFocus_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+
+Gui.FormPalletMaint.txtNote.SelectAll
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("txtNote_GotFocus_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.txtNote_GotFocus.End
+
+Program.Sub.cmdPrint_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdPrint_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String,"")
+V.Local.sParams.Declare(String,"")
+V.Local.sValues.Declare(String,"")
+V.Local.iRet.Declare(Long,0)
+V.Local.lBIRunID.Declare(Long,0)
+V.Local.lLogID.Declare(Long,0)
+V.Local.iRpt.Declare(Long,0)
+
+F.Global.BI.GetRunID(V.Local.lBIRunID)
+F.Global.BI.GetIDFromName("GCG_6237_Type_Price.rpt",V.Local.iRpt)
+F.Global.BI.StartLogging(V.Local.lBIRunID,V.Local.iRpt,-1,"GCG_6237_Type_Price",V.Local.lLogID)
+F.Global.BI.StopLogging(V.Local.lLogID)
+
+V.Local.sParams.Set("Customer*!*Note")
+V.Local.sValues.Set(V.Screen.FormPalletMaint!txtCust.Text)
+F.Intrinsic.String.Build("{0}*!*{1}",V.Local.sValues,V.Screen.FormPalletMaint!txtNote.Text,V.Local.sValues)
+
+F.Global.BI.RunReportPreProcessor(V.Local.lBIRunID,V.Local.lLogID,V.Local.sParams,V.Local.sValues.Trim,"",-1,True,"",-1,"",-1,"","",V.Local.iRet)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdPrint_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	F.Intrinsic.String.Build("Project: GCG_6237_Pallet_Maint.g2u {0}{0}Subroutine: {1}{0}Error Occurred {2} with description {3}",V.Ambient.NewLine,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(FormPalletMaint_UnLoad)
+Function.Intrinsic.Control.EndIf
+Program.Sub.cmdPrint_Click.End
